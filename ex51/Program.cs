@@ -1,8 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ex51
 {
@@ -12,12 +9,14 @@ namespace ex51
         {
             ServiceStation serviceStation = new ServiceStation();
 
-            while (true)
+            while (serviceStation.Time != serviceStation.WorkingTime)
             {
-                Auto auto = new Auto();                               
-                
-                serviceStation.FixAuto(auto);
+                Auto auto = new Auto();
+
+                serviceStation.FixAuto(auto);                
             }
+
+            Console.WriteLine("Рабочий день автосервиса закончен...");
         }
     }
 
@@ -51,24 +50,20 @@ namespace ex51
     {
         const string CommandRejection = "ОТКАЗ";
 
-        private List<Detail> _detailStorage;
-        private Random _random;
-        private int _detailCount;
-        private int _cashBalance;
-        private int _penaltyForAbsence;
-        private int _penaltyForError;
+        private List<Detail> _detailStorage = new List<Detail>();
+        private Random _random = new Random();
+        private int _detailCount = 10;
+        private int _cashBalance = 0;
+        private int _penaltyForAbsence = 200;
+        private int _penaltyForError = 500;
 
         public ServiceStation()
         {
-            _detailStorage = new List<Detail>();
-            _random = new Random();
-            _detailCount = 10;
-            _cashBalance = 0;
-            _penaltyForAbsence = 200;
-            _penaltyForError = 500;
-
             AddDetails();
         }
+
+        public int WorkingTime { get; private set; } = 8;
+        public int Time { get; private set; } = 0;
 
         public void ShowCashBalance()
         {
@@ -103,9 +98,16 @@ namespace ex51
                     isFixed = true;
                 }
 
+                WorkHour();
+
                 Console.ReadKey();
                 Console.Clear();
             }
+        }
+
+        private void WorkHour()
+        {
+            Time++;
         }
 
         private bool TryFindNessesaryDetail(out Detail chosenDetail, Auto auto)
@@ -113,7 +115,9 @@ namespace ex51
             bool isWork = true;
 
             while (isWork)
-            {
+            {                
+                Console.Clear();
+
                 ShowAllInfo(auto);
 
                 List<Detail> storage = ShowStorage();
@@ -121,7 +125,14 @@ namespace ex51
                 Console.Write("\nКакую деталь будем менять? ");
                 var chosenOperation = Console.ReadLine();
 
-                if (int.TryParse(chosenOperation, out int detailNumber))
+                if (chosenOperation.ToUpper() == CommandRejection)
+                {
+                    Console.WriteLine($"Вы отказали клиенту. Штраф: {_penaltyForAbsence} рублей...");
+                    _cashBalance -= _penaltyForAbsence;
+                    chosenDetail = null;
+                    return false;
+                }
+                else if (int.TryParse(chosenOperation, out int detailNumber))
                 {
                     chosenDetail = storage[detailNumber - 1];
                     return true;
@@ -130,15 +141,8 @@ namespace ex51
                 {
                     Console.WriteLine("Неверный ввод. Попробуйте еще раз...");
                     Console.ReadKey();
-                    Console.Clear();
                 }
-
-                if (chosenOperation.ToUpper() == CommandRejection)
-                {
-                    Console.WriteLine($"Вы отказали клиенту. Штраф: {_penaltyForAbsence} рублей...");
-                    _cashBalance -= _penaltyForAbsence;
-                }
-            }            
+            }
 
             chosenDetail = null;
             return false;
